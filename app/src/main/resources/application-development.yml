@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    show-sql: true
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+mysql:
+  url: localhost:3306
+  schema: auth_api
+  username: root
+  password: root123

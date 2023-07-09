@@ -1,7 +1,14 @@
+buildscript {
+    dependencies {
+        classpath('org.flywaydb:flyway-mysql:9.19.4')
+    }
+}
+
 plugins {
     id 'application'
     id 'org.springframework.boot' version '3.1.1'
     id 'io.spring.dependency-management' version '1.1.0'
+    id('org.flywaydb.flyway') version '9.19.4'
 }
 
 repositories {
@@ -10,9 +17,52 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'com.mysql:mysql-connector-j:8.0.33'
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    testImplementation 'org.flywaydb:flyway-core:9.19.4'
+    testImplementation 'org.flywaydb:flyway-mysql:9.19.4'
+
+    testImplementation('org.testcontainers:testcontainers:1.18.3')
+    testImplementation('org.testcontainers:junit-jupiter:1.18.3')
+    testImplementation('org.testcontainers:mysql:1.18.3')
+
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+flyway {
+    url = System.getenv('FLYWAY_MYSQL_URL') ?: 'jdbc:mysql://localhost:3306/auth_api'
+    user = System.getenv('FLYWAY_MYSQL_USERNAME') ?: 'root'
+    password = System.getenv('FLYWAY_MYSQL_PASSWORD') ?: 'root123'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.register('unitTest', Test) {
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'unitTest'
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'integrationTest'
+    }
+}
+
+tasks.register('e2eTest', Test) {
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'e2eTest'
+    }
 }
