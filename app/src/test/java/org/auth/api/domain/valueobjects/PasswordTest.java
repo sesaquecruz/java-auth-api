@@ -37,9 +37,16 @@ public class PasswordTest {
     public void givenAEmptyPassword_whenCallsNewPassword_thenThrowsAValidationException() {
         final String expectedPassword = "   ";
         final var actualException = assertThrows(ValidationException.class, () -> Password.newPassword(expectedPassword));
-        assertEquals(2, actualException.getErrors().size());
+        assertEquals(1, actualException.getErrors().size());
         assertEquals("password must not be empty", actualException.getErrors().get(0).message());
-        assertEquals("password must have more than 5 characters", actualException.getErrors().get(1).message());
+    }
+
+    @Test
+    public void givenAPasswordLessThan6Characters_whenCallsNewPassword_thenThrowsAValidationException() {
+        final String expectedPassword = "12345";
+        final var actualException = assertThrows(ValidationException.class, () -> Password.newPassword(expectedPassword));
+        assertEquals(1, actualException.getErrors().size());
+        assertEquals("password must have more than 5 characters", actualException.getErrors().get(0).message());
     }
 
     @Test

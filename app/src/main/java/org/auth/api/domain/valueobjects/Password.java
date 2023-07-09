@@ -23,10 +23,12 @@ public class Password extends ValueObject {
             throw ValidationException.with(handler);
         }
 
-        final var strippedValue = value.strip();
-
-        if (strippedValue.isBlank())
+        if (value.isBlank()) {
             handler.append(ValidationError.with("password must not be empty"));
+            throw ValidationException.with(handler);
+        }
+
+        final var strippedValue = value.strip();
 
         if (strippedValue.length() < 6)
             handler.append(ValidationError.with("password must have more than 5 characters"));

@@ -12,3 +12,10 @@ spring:
     show-sql: false
     hibernate:
       ddl-auto: none
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+    defaultModelsExpandDepth: -1

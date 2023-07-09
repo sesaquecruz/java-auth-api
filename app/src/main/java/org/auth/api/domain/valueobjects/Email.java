@@ -23,10 +23,12 @@ public class Email extends ValueObject {
             throw ValidationException.with(handler);
         }
 
-        final var strippedAddress = address.strip();
-
-        if (strippedAddress.isBlank())
+        if (address.isBlank()) {
             handler.append(ValidationError.with("email must not be empty"));
+            throw ValidationException.with(handler);
+        }
+
+        final var strippedAddress = address.strip();
 
         if (!EmailUtils.isValidEmail(strippedAddress))
             handler.append(ValidationError.with("email is invalid"));

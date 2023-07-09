@@ -114,13 +114,11 @@ public class CreateUserTest {
         assertTrue(errors.containsKey("email"));
         assertTrue(errors.containsKey("password"));
 
-        assertEquals(2, emailErrors.size());
+        assertEquals(1, emailErrors.size());
         assertEquals("email must not be empty", emailErrors.get(0).message());
-        assertEquals("email is invalid", emailErrors.get(1).message());
 
-        assertEquals(2, passwordErrors.size());
+        assertEquals(1, passwordErrors.size());
         assertEquals("password must not be empty", passwordErrors.get(0).message());
-        assertEquals("password must have more than 5 characters", passwordErrors.get(1).message());
     }
 
     @Test

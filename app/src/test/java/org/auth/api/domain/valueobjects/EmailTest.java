@@ -43,9 +43,8 @@ public class EmailTest {
     public void givenAEmptyAddress_whenCallsNewEmail_thenThrowsAValidationException() {
         final String expectedAddress = "   ";
         final var actualException = assertThrows(ValidationException.class, () -> Email.newEmail(expectedAddress));
-        assertEquals(2, actualException.getErrors().size());
+        assertEquals(1, actualException.getErrors().size());
         assertEquals("email must not be empty", actualException.getErrors().get(0).message());
-        assertEquals("email is invalid", actualException.getErrors().get(1).message());
     }
 
     @Test
