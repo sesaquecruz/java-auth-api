@@ -1,8 +1,13 @@
 package org.auth.api.infrastructure.e2e;
 
+import org.auth.api.domain.user.User;
+import org.auth.api.domain.valueobjects.Email;
+import org.auth.api.domain.valueobjects.Password;
 import org.auth.api.infrastructure.E2ETest;
 import org.auth.api.infrastructure.config.json.Json;
+import org.auth.api.infrastructure.services.security.AuthTokenService;
 import org.auth.api.infrastructure.user.models.CreateUserRequest;
+import org.auth.api.infrastructure.user.persitence.UserJpaEntity;
 import org.auth.api.infrastructure.user.persitence.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,17 +20,19 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.UUID;
-
+import static java.util.Objects.requireNonNull;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @E2ETest
 @Testcontainers
 public class UserApiE2ETest {
+    @Autowired
+    private AuthTokenService authTokenService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -49,10 +56,24 @@ public class UserApiE2ETest {
         userRepository.deleteAll();
     }
 
+    private String getAuthToken(final String email, final String password) throws Exception {
+        final var token = mvc.perform(post("/users/login")
+                        .with(httpBasic(email, password))
+                )
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getHeader("Authorization");
+
+        return requireNonNull(token);
+    }
+
     @Test
     public void givenValidData_whenAccessesCreateUser_thenCreatesAnUser() throws Exception {
         // given
-        final var requestContent = Json.marshal(new CreateUserRequest("test@mail.com", "test12"));
+        final var email = "test@mail.com";
+        final var password = "test12";
+        final var requestContent = Json.marshal(new CreateUserRequest(email, password));
         assertEquals(0, userRepository.count());
 
         // when
@@ -62,23 +83,15 @@ public class UserApiE2ETest {
                 .content(requestContent);
 
         // then
-        final var response = mvc.perform(request)
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse();
-
-        final var location = response.getHeader("Location");
-        assertTrue(location.startsWith("/users/"));
-
-        final var locationValue = location.replace("/users/", "");
-        final var id = assertDoesNotThrow(() -> UUID.fromString(locationValue));
+        mvc.perform(request)
+                .andExpect(status().isCreated());
 
         assertEquals(1, userRepository.count());
-        assertTrue(userRepository.findById(id).isPresent());
+        assertTrue(userRepository.findByEmail(email).isPresent());
     }
 
     @Test
-    public void givenNullData_whenAccessesCreateUser_thenReturnsAnUnprocessableEntity() throws Exception {
+    public void givenNullData_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
         final var requestContent = Json.marshal(new CreateUserRequest(null, null));
         assertEquals(0, userRepository.count());
@@ -92,14 +105,15 @@ public class UserApiE2ETest {
         // then
         mvc.perform(actualRequest)
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.email[0].message", equalTo("email must not be null")))
-                .andExpect(jsonPath("$.password[0].message", equalTo("password must not be null")));
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.email[0]", equalTo("email must not be null")))
+                .andExpect(jsonPath("$.password[0]", equalTo("password must not be null")));
 
         assertEquals(0, userRepository.count());
     }
 
     @Test
-    public void givenEmptyData_whenAccessesCreateUser_thenReturnsAnUnprocessableEntity() throws Exception {
+    public void givenEmptyData_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
         final var requestContent = Json.marshal(new CreateUserRequest("", ""));
         assertEquals(0, userRepository.count());
@@ -113,14 +127,15 @@ public class UserApiE2ETest {
         // then
         mvc.perform(actualRequest)
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.email[0].message", equalTo("email must not be empty")))
-                .andExpect(jsonPath("$.password[0].message", equalTo("password must not be empty")));
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.email[0]", equalTo("email must not be empty")))
+                .andExpect(jsonPath("$.password[0]", equalTo("password must not be empty")));
 
         assertEquals(0, userRepository.count());
     }
 
     @Test
-    public void givenInvalidEmail_whenAccessesCreateUser_thenReturnsAnUnprocessableEntity() throws Exception {
+    public void givenAnInvalidEmail_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
         final var requestContent = Json.marshal(new CreateUserRequest("test@mailcom", "test12"));
         assertEquals(0, userRepository.count());
@@ -134,13 +149,14 @@ public class UserApiE2ETest {
         // then
         mvc.perform(actualRequest)
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.email[0].message", equalTo("email is invalid")));
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.email[0]", equalTo("email is invalid")));
 
         assertEquals(0, userRepository.count());
     }
 
     @Test
-    public void givenPasswordLessThan5Characters_whenAccessesCreateUser_thenReturnsAnUnprocessableEntity() throws Exception {
+    public void givenAPasswordLessThan5Characters_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
         final var requestContent = Json.marshal(new CreateUserRequest("test@mail.com", "test1"));
         assertEquals(0, userRepository.count());
@@ -154,8 +170,93 @@ public class UserApiE2ETest {
         // then
         mvc.perform(actualRequest)
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.password[0].message", equalTo("password must have more than 5 characters")));
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.password[0]", equalTo("password must have more than 5 characters")));
 
         assertEquals(0, userRepository.count());
+    }
+
+    @Test
+    public void givenValidCredentials_whenAccessesLoginUser_thenReturnsAnAuthorizationToken() throws Exception {
+        // given
+        final var email = "test@mail.com";
+        final var password = "test123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+        final var id = user.getId().getValue();
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        // when
+        final var request = post("/users/login")
+                .with(httpBasic(email, password));
+
+        // then
+        final var response = mvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse();
+
+        final var token = response.getHeader("Authorization");
+        assertNotNull(token);
+
+        final var sub = authTokenService.getSub(token);
+        assertEquals(id, sub);
+    }
+
+    @Test
+    public void givenInvalidCredentials_whenAccessesLoginUser_thenReturnsUnauthorized() throws Exception {
+        // given
+        final var email = "test@mail.com";
+        final var password = "test123";
+
+        // when
+        final var request = post("/users")
+                .with(httpBasic(email, password));
+
+        // then
+        final var response = mvc.perform(request)
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void givenAnAuthenticatedUser_whenAccessesFindUser_thenReturnsHisInfo() throws Exception {
+        // given
+        final var email = "test@mail.com";
+        final var password = "test123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+        final var id = user.getId().getValue();
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        final var token = getAuthToken(email, password);
+
+        // when
+        final var request = get("/users")
+                .header("Authorization", token)
+                .accept(MediaType.APPLICATION_JSON);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.id", equalTo(id)))
+                .andExpect(jsonPath("$.email", equalTo(email)));
+    }
+
+    @Test
+    public void givenAnNonAuthenticatedUser_whenAccessesFindUser_thenReturnsUnauthorized() throws Exception {
+        // given
+        final var token = "";
+
+        // when
+        final var request = get("/users")
+                .header("Authorization", token)
+                .accept(MediaType.APPLICATION_JSON);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnauthorized());
     }
 }

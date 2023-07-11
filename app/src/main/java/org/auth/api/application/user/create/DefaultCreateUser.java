@@ -1,12 +1,13 @@
-package org.auth.api.application.user;
+package org.auth.api.application.user.create;
 
-import org.auth.api.domain.exceptions.InternalErrorException;
-import org.auth.api.domain.exceptions.NotificationException;
+import org.auth.api.domain.exceptions.GatewayException;
+import org.auth.api.domain.exceptions.notification.NotificationException;
 import org.auth.api.domain.exceptions.ValidationException;
 import org.auth.api.domain.user.User;
 import org.auth.api.domain.user.UserGateway;
+import org.auth.api.domain.validation.ErrorHandler;
 import org.auth.api.domain.validation.Notification;
-import org.auth.api.domain.validation.ValidationError;
+import org.auth.api.domain.validation.Error;
 import org.auth.api.domain.valueobjects.Email;
 import org.auth.api.domain.valueobjects.Password;
 
@@ -31,7 +32,6 @@ public class DefaultCreateUser extends CreateUser {
             throw NotificationException.with(notification);
 
         final var user = createUser(email.get(), password.get(), notification);
-
         if (user.isEmpty())
             throw NotificationException.with(notification);
 
@@ -40,52 +40,54 @@ public class DefaultCreateUser extends CreateUser {
 
     private Optional<Email> createEmail(final String email, final Notification notification) {
         try {
-            return Optional.of(Email.newEmail(email));
+            return Optional.of(Email.with(email));
         } catch (final ValidationException ex) {
-            notification.append("email", ex.getErrors());
+            notification.append("email", ex.getErrorHandler());
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     private Optional<Password> createPassword(final String password, final Notification notification) {
         try {
-            return Optional.of(Password.newPassword(password));
+            return Optional.of(Password.withRawValue(password));
         } catch (final ValidationException ex) {
-            notification.append("password", ex.getErrors());
+            notification.append("password", ex.getErrorHandler());
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     private Optional<User> findUser(final Email email, final Notification notification) {
-        Optional<User> user;
         try {
-            user = userGateway.findByEmail(email);
+            final var user = userGateway.findByEmail(email);
+            if (user.isPresent()) {
+                final var errorHandler = ErrorHandler.create()
+                        .append(Error.with("email already used"));
+                notification.append("email", errorHandler);
+            }
+            return user;
         } catch (final Exception ex) {
-            throw InternalErrorException.with("user gateway error", ex);
+            throw GatewayException.with(GatewayException.USER_GATEWAY_ERROR, ex);
         }
-        if (user.isPresent())
-            notification.append("email", ValidationError.with("email already used"));
-        return user;
     }
 
     private Optional<User> createUser(final Email email, final Password password, final Notification notification) {
         try {
             return Optional.of(User.newUser(email, password));
         } catch (final ValidationException ex) {
-            notification.append("user", ex.getErrors());
+            notification.append("user", ex.getErrorHandler());
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     private User saveUser(final User user) {
         try {
             return userGateway.save(user);
         } catch (final Exception ex) {
-            throw InternalErrorException.with("user gateway error", ex);
+            throw GatewayException.with(GatewayException.USER_GATEWAY_ERROR, ex);
         }
     }
 
     private CreateUserOutput createOutput(final User user) {
-        return CreateUserOutput.with(user.getId().toString());
+        return CreateUserOutput.with(user.getId().getValue());
     }
 }

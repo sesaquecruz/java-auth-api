@@ -3,8 +3,8 @@ package org.auth.api.domain.valueobjects;
 import org.auth.api.domain.ValueObject;
 import org.auth.api.domain.exceptions.ValidationException;
 import org.auth.api.domain.utils.EmailUtils;
-import org.auth.api.domain.validation.ValidationError;
-import org.auth.api.domain.validation.ValidationHandler;
+import org.auth.api.domain.validation.Error;
+import org.auth.api.domain.validation.ErrorHandler;
 
 import java.util.Objects;
 
@@ -15,35 +15,32 @@ public class Email extends ValueObject {
         this.address = address;
     }
 
-    public static Email newEmail(final String address) {
-        final var handler = ValidationHandler.create();
+    public static Email with(final String address) {
+        final var handler = ErrorHandler.create();
 
         if (address == null) {
-            handler.append(ValidationError.with("email must not be null"));
+            handler.append(Error.with("email must not be null"));
             throw ValidationException.with(handler);
         }
 
         if (address.isBlank()) {
-            handler.append(ValidationError.with("email must not be empty"));
+            handler.append(Error.with("email must not be empty"));
             throw ValidationException.with(handler);
         }
 
         final var strippedAddress = address.strip();
 
-        if (!EmailUtils.isValidEmail(strippedAddress))
-            handler.append(ValidationError.with("email is invalid"));
-
-        if (strippedAddress.length() > 100)
-            handler.append(ValidationError.with("email must not have more than 100 characters"));
-
-        if (handler.hasError())
+        if (strippedAddress.length() > 100) {
+            handler.append(Error.with("email must not have more than 100 characters"));
             throw ValidationException.with(handler);
+        }
+
+        if (!EmailUtils.isValidEmail(strippedAddress)) {
+            handler.append(Error.with("email is invalid"));
+            throw ValidationException.with(handler);
+        }
 
         return new Email(strippedAddress);
-    }
-
-    public static Email with(final String address) {
-        return new Email(address);
     }
 
     public String getAddress() {

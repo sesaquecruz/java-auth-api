@@ -1,16 +1,17 @@
 package org.auth.api.domain;
 
+import org.auth.api.domain.valueobjects.Identifier;
+
 import java.util.Objects;
-import java.util.UUID;
 
 public abstract class Entity {
-    private final UUID id;
+    private final Identifier id;
 
-    protected Entity(final UUID id) {
+    protected Entity(final Identifier id) {
         this.id = id;
     }
 
-    public UUID getId() {
+    public Identifier getId() {
         return id;
     }
 

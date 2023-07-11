@@ -3,8 +3,8 @@ package org.auth.api.domain.valueobjects;
 import org.auth.api.domain.ValueObject;
 import org.auth.api.domain.exceptions.ValidationException;
 import org.auth.api.domain.utils.PasswordUtils;
-import org.auth.api.domain.validation.ValidationError;
-import org.auth.api.domain.validation.ValidationHandler;
+import org.auth.api.domain.validation.Error;
+import org.auth.api.domain.validation.ErrorHandler;
 
 import java.util.Objects;
 
@@ -15,34 +15,40 @@ public class Password extends ValueObject {
         this.value = value;
     }
 
-    public static Password newPassword(final String value) {
-        final var handler = ValidationHandler.create();
+    public static Password withRawValue(final String value) {
+        final var handler = ErrorHandler.create();
 
         if (value == null) {
-            handler.append(ValidationError.with("password must not be null"));
+            handler.append(Error.with("password must not be null"));
             throw ValidationException.with(handler);
         }
 
         if (value.isBlank()) {
-            handler.append(ValidationError.with("password must not be empty"));
+            handler.append(Error.with("password must not be empty"));
             throw ValidationException.with(handler);
         }
 
         final var strippedValue = value.strip();
 
-        if (strippedValue.length() < 6)
-            handler.append(ValidationError.with("password must have more than 5 characters"));
-
-        if (strippedValue.length() > 100)
-            handler.append(ValidationError.with("password must not have more than 100 characters"));
-
-        if (handler.hasError())
+        if (strippedValue.length() < 6) {
+            handler.append(Error.with("password must have more than 5 characters"));
             throw ValidationException.with(handler);
+        }
+
+        if (strippedValue.length() > 100) {
+            handler.append(Error.with("password must not have more than 100 characters"));
+            throw ValidationException.with(handler);
+        }
 
         return new Password(PasswordUtils.encodePassword(strippedValue));
     }
 
-    public static Password with(final String value) {
+    public static Password withEncodedValue(final String value) {
+        if (!PasswordUtils.isEncodedPassword(value)) {
+            final var handler = ErrorHandler.create()
+                    .append(Error.with("password must be encoded"));
+            throw ValidationException.with(handler);
+        }
         return new Password(value);
     }
 
