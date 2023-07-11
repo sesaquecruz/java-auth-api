@@ -6,7 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.auth.api.infrastructure.user.models.CreateUserRequest;
+import org.auth.api.infrastructure.user.models.UserRequest;
+import org.auth.api.infrastructure.user.models.UserResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,9 +27,11 @@ public interface UserApi {
             @ApiResponse(responseCode = "422", description = "Invalid Data"),
             @ApiResponse(responseCode = "500", description = "Server Error")
     })
-    ResponseEntity<?> createUser(@RequestBody CreateUserRequest body);
+    ResponseEntity<Void> createUser(@RequestBody UserRequest body);
 
-    @PostMapping(value = "login")
+    @PostMapping(
+            value = "login"
+    )
     @Operation(
             summary = "User login",
             security = @SecurityRequirement(name = "Basic")
@@ -38,9 +41,11 @@ public interface UserApi {
             @ApiResponse(responseCode = "401", description = "Invalid Credentials"),
             @ApiResponse(responseCode = "500", description = "Server Error")
     })
-    ResponseEntity<?> loginUser(Authentication authentication);
+    ResponseEntity<Void> loginUser(Authentication authentication);
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     @Operation(
             summary = "Find an user",
             security = @SecurityRequirement(name = "Bearer")
@@ -50,5 +55,22 @@ public interface UserApi {
             @ApiResponse(responseCode = "401", description = "Invalid Credentials"),
             @ApiResponse(responseCode = "500", description = "Server Error")
     })
-    ResponseEntity<?> findUser(@RequestHeader(name="Authorization") @Schema(hidden = true) String token);
+    ResponseEntity<UserResponse> findUser(@RequestHeader(name="Authorization") @Schema(hidden = true) String token);
+
+    @PutMapping(
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(
+            summary = "Update an user",
+            security = @SecurityRequirement(name = "Bearer")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "User Updated"),
+            @ApiResponse(responseCode = "422", description = "Invalid Data"),
+            @ApiResponse(responseCode = "500", description = "Server Error")
+    })
+    ResponseEntity<Void> updateUser(
+            @RequestHeader(name="Authorization") @Schema(hidden = true) String token,
+            @RequestBody UserRequest body
+    );
 }

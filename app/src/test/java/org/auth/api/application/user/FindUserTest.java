@@ -1,4 +1,4 @@
-package org.auth.api.application;
+package org.auth.api.application.user;
 
 import org.auth.api.application.user.find.DefaultFindUser;
 import org.auth.api.application.user.find.FindUserInput;

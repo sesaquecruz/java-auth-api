@@ -4,6 +4,7 @@ import org.auth.api.application.user.create.CreateUser;
 import org.auth.api.application.user.create.CreateUserOutput;
 import org.auth.api.application.user.find.FindUser;
 import org.auth.api.application.user.find.FindUserOutput;
+import org.auth.api.application.user.update.UpdateUser;
 import org.auth.api.domain.exceptions.GatewayException;
 import org.auth.api.domain.exceptions.notification.NotificationException;
 import org.auth.api.domain.validation.Error;
@@ -13,7 +14,7 @@ import org.auth.api.infrastructure.ControllerTest;
 import org.auth.api.infrastructure.config.UserDetailsConfig;
 import org.auth.api.infrastructure.config.json.Json;
 import org.auth.api.infrastructure.services.security.AuthTokenService;
-import org.auth.api.infrastructure.user.models.CreateUserRequest;
+import org.auth.api.infrastructure.user.models.UserRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ControllerTest(controllers = UserApi.class)
@@ -43,6 +43,8 @@ public class UserApiIT {
     private CreateUser createUserUC;
     @MockBean
     private FindUser findUserUC;
+    @MockBean
+    private UpdateUser updateUserUC;
     @Autowired
     private MockMvc mvc;
 
@@ -50,6 +52,7 @@ public class UserApiIT {
     public void cleanUp() {
         reset(createUserUC);
         reset(findUserUC);
+        reset(updateUserUC);
     }
 
     private String getAuthToken() throws Exception {
@@ -69,7 +72,7 @@ public class UserApiIT {
         final var expectedPassword = "test12";
         final var expectedId = UUID.randomUUID().toString();
 
-        final var requestContent = Json.marshal(new CreateUserRequest(expectedEmail, expectedPassword));
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
 
         when(createUserUC.execute(any()))
                 .thenReturn(CreateUserOutput.with(expectedId));
@@ -107,7 +110,7 @@ public class UserApiIT {
                 .append("email", emailErrors)
                 .append("password", passwordErrors);
 
-        final var requestContent = Json.marshal(new CreateUserRequest(expectedEmail, expectedPassword));
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
 
         doThrow(NotificationException.with(notification))
                 .when(createUserUC).execute(any());
@@ -137,7 +140,7 @@ public class UserApiIT {
         final var expectedEmail = "test@mail.com";
         final var expectedPassword = "test12";
 
-        final var requestContent = Json.marshal(new CreateUserRequest(expectedEmail, expectedPassword));
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
 
         doThrow(GatewayException.with("an error message", null))
                 .when(createUserUC).execute(any());
@@ -232,6 +235,99 @@ public class UserApiIT {
         final var request = get("/users")
                 .header("Authorization", token)
                 .accept(MediaType.APPLICATION_JSON);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void givenValidCredentialsAndData_whenAccessesUpdateUser_thenUpdatesUserData() throws Exception {
+        // given
+        final var expectedEmail = "updatetest@mail.com";
+        final var expectedPassword = "update123";
+
+        final var authUserId = USER_ID;
+        final var authToken = getAuthToken();
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
+
+        doNothing()
+                .when(updateUserUC).execute(any());
+
+        // when
+        final var request = put("/users")
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestContent);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isNoContent());
+
+        verify(updateUserUC, times(1)).execute(argThat(input ->
+                Objects.equals(authUserId, input.id()) &&
+                Objects.equals(expectedEmail, input.email()) &&
+                Objects.equals(expectedPassword, input.password())
+        ));
+    }
+
+    @Test
+    public void givenValidCredentialsAndInvalidData_whenAccessesUpdateUser_thenReturnsUnprocessableEntity() throws Exception {
+        // given
+        final var expectedEmail = "updatetest@mailcom";
+        final var expectedPassword = "updat";
+
+        final var emailErrors = ErrorHandler.create()
+                .append(Error.with("email is invalid"));
+
+        final var passwordErrors = ErrorHandler.create()
+                .append(Error.with("password must have more than 5 characters"));
+
+        final var notification = Notification.create()
+                .append("email", emailErrors)
+                .append("password", passwordErrors);
+
+        final var authUserId = USER_ID;
+        final var authToken = getAuthToken();
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
+
+        doThrow(NotificationException.with(notification))
+                .when(updateUserUC).execute(any());
+
+        // when
+        final var request = put("/users")
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestContent);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.email[0]", equalTo("email is invalid")))
+                .andExpect(jsonPath("$.password[0]", equalTo("password must have more than 5 characters")));
+
+        verify(updateUserUC, times(1)).execute(argThat(input ->
+                Objects.equals(authUserId, input.id()) &&
+                        Objects.equals(expectedEmail, input.email()) &&
+                        Objects.equals(expectedPassword, input.password())
+        ));
+    }
+
+    @Test
+    public void givenInvalidCredentialsAndValidData_whenAccessesUpdateUser_thenReturnsUnauthorized() throws Exception {
+        // given
+        final var expectedEmail = "updatetest@mail.com";
+        final var expectedPassword = "update123";
+
+        final var authToken = "";
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
+
+        // when
+        final var request = put("/users")
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestContent);
 
         // then
         mvc.perform(request)
