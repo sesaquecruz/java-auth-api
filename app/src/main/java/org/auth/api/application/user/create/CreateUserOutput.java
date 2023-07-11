@@ -1,4 +1,4 @@
-package org.auth.api.application.user;
+package org.auth.api.application.user.create;
 
 public record CreateUserOutput(
         String id

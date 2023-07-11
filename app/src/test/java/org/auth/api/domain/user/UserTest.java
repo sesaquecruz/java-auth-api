@@ -1,13 +1,14 @@
 package org.auth.api.domain.user;
 
 import org.auth.api.domain.exceptions.ValidationException;
+import org.auth.api.domain.utils.IDUtils;
 import org.auth.api.domain.valueobjects.Email;
+import org.auth.api.domain.valueobjects.Identifier;
 import org.auth.api.domain.valueobjects.Password;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,8 +17,8 @@ public class UserTest {
     @Test
     public void givenValidData_whenCallsNewUser_thenCreatesAnUser() {
         // given
-        final var expectedEmail = Email.newEmail("test@mail.com");
-        final var expectedPassword = Password.newPassword("test123");
+        final var expectedEmail = Email.with("test@mail.com");
+        final var expectedPassword = Password.withRawValue("test123");
 
         // when
         final var actualUser = User.newUser(expectedEmail, expectedPassword);
@@ -41,18 +42,20 @@ public class UserTest {
         final var actualException =
                 assertThrows(ValidationException.class, () -> User.newUser(expectedEmail, expectedPassword));
 
+        final var errors = actualException.getErrorHandler().getErrors();
+
         // then
-        assertEquals(2, actualException.getErrors().size());
-        assertEquals("email must not be null", actualException.getErrors().get(0).message());
-        assertEquals("password must not be null", actualException.getErrors().get(1).message());
+        assertEquals(2, errors.size());
+        assertEquals("email must not be null", errors.get(0).message());
+        assertEquals("password must not be null", errors.get(1).message());
     }
 
     @Test
     public void givenValidData_whenCallsWith_thenCreatesAnUser() {
         // given
-        final var expectedId = UUID.randomUUID();
-        final var expectedEmail = Email.newEmail("test@mail.com");
-        final var expectedPassword = Password.newPassword("test123");
+        final var expectedId = Identifier.with(IDUtils.newUUID());
+        final var expectedEmail = Email.with("test@mail.com");
+        final var expectedPassword = Password.withRawValue("test123");
         final var expectedCreatedAt = Instant.now();
         final var expectedUpdatedAt = Instant.now();
 
@@ -76,7 +79,7 @@ public class UserTest {
     @Test
     public void givenNullData_whenCallsWith_thenThrowsAValidationException() {
         // given
-        final UUID expectedId = null;
+        final Identifier expectedId = null;
         final Email expectedEmail = null;
         final Password expectedPassword = null;
         final Instant expectedCreatedAt = null;
@@ -91,21 +94,23 @@ public class UserTest {
                 expectedUpdatedAt
         ));
 
+        final var errors = actualException.getErrorHandler().getErrors();
+
         // then
-        assertEquals(5, actualException.getErrors().size());
-        assertEquals("id must not be null", actualException.getErrors().get(0).message());
-        assertEquals("email must not be null", actualException.getErrors().get(1).message());
-        assertEquals("password must not be null", actualException.getErrors().get(2).message());
-        assertEquals("created at must not be null", actualException.getErrors().get(3).message());
-        assertEquals("updated at must not be null", actualException.getErrors().get(4).message());
+        assertEquals(5, errors.size());
+        assertEquals("id must not be null", errors.get(0).message());
+        assertEquals("email must not be null", errors.get(1).message());
+        assertEquals("password must not be null", errors.get(2).message());
+        assertEquals("created at must not be null", errors.get(3).message());
+        assertEquals("updated at must not be null", errors.get(4).message());
     }
 
     @Test
     public void givenInvalidAuditData_whenCallsWith_thenThrowsAValidationException() {
         // given
-        final var expectedId = UUID.randomUUID();
-        final var expectedEmail = Email.newEmail("test@mail.com");
-        final var expectedPassword = Password.newPassword("test123");
+        final var expectedId = Identifier.with(IDUtils.newUUID());
+        final var expectedEmail = Email.with("test@mail.com");
+        final var expectedPassword = Password.withRawValue("test123");
         final var expectedCreatedAt = Instant.now();
         final var expectedUpdatedAt = expectedCreatedAt.minusSeconds(1);
 
@@ -118,18 +123,20 @@ public class UserTest {
                 expectedUpdatedAt
         ));
 
+        final var errors = actualException.getErrorHandler().getErrors();
+
         // then
-        assertEquals(1, actualException.getErrors().size());
-        assertEquals("update at must not come before created at", actualException.getErrors().get(0).message());
+        assertEquals(1, errors.size());
+        assertEquals("update at must not come before created at", errors.get(0).message());
     }
 
     @Test
     public void givenAnUserAndANewEmail_whenCallsUpdateEmail_thenUpdatesUserEmail() {
         // given
-        final var expectedUser = User.newUser(Email.newEmail("test@mail.com"), Password.newPassword("test12"));
+        final var expectedUser = User.newUser(Email.with("test@mail.com"), Password.withRawValue("test12"));
 
         final var expectedId = expectedUser.getId();
-        final var newEmail = Email.newEmail("newtest@mail.com");
+        final var newEmail = Email.with("newtest@mail.com");
         final var expectedPassword = expectedUser.getPassword();
         final var expectedCreatedAt = expectedUser.getCreatedAt();
         final var oldUpdatedAt = expectedUser.getUpdatedAt();
@@ -149,11 +156,11 @@ public class UserTest {
     @Test
     public void givenAnUserAndANewPassword_whenCallsUpdateEmail_thenUpdatesUserPassword() {
         // given
-        final var expectedUser = User.newUser(Email.newEmail("test@mail.com"), Password.newPassword("test12"));
+        final var expectedUser = User.newUser(Email.with("test@mail.com"), Password.withRawValue("test12"));
 
         final var expectedId = expectedUser.getId();
         final var expectedEmail = expectedUser.getEmail();
-        final var newPassword = Password.newPassword("newtest12");
+        final var newPassword = Password.withRawValue("newtest12");
         final var expectedCreatedAt = expectedUser.getCreatedAt();
         final var oldUpdatedAt = expectedUser.getUpdatedAt();
 

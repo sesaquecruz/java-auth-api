@@ -28,12 +28,12 @@ public class UserMySQLGatewayIT {
     @Test
     public void givenAnUser_whenCallsSave_thenSavesAndReturnsTheUser() {
         // given
-        final var expectedUser = User.newUser(Email.newEmail("test@mail.com"), Password.newPassword("test12"));
+        final var expectedUser = User.newUser(Email.with("test@mail.com"), Password.withRawValue("test12"));
         assertEquals(0, repository.count());
 
         // when
         final var actualUser = gateway.save(expectedUser);
-        final var savedEntity = repository.findById(expectedUser.getId());
+        final var savedEntity = repository.findById(expectedUser.getId().getValue());
 
         // then
         assertEquals(1, repository.count());
@@ -55,9 +55,31 @@ public class UserMySQLGatewayIT {
     }
 
     @Test
+    public void givenAnExistentUser_whenCallsFindById_thenReturnsTheUser() {
+        // given
+        final var expectedUser = User.newUser(Email.with("test@mail.com"), Password.withRawValue("test12"));
+        assertEquals(0, repository.count());
+
+        repository.save(UserJpaEntity.from(expectedUser));
+        assertEquals(1, repository.count());
+
+        // when
+        final var actualUser = gateway.findById(expectedUser.getId()).get();
+
+        // then
+        assertEquals(1, repository.count());
+
+        assertEquals(expectedUser.getId(), actualUser.getId());
+        assertEquals(expectedUser.getEmail(), actualUser.getEmail());
+        assertEquals(expectedUser.getPassword(), actualUser.getPassword());
+        assertEquals(expectedUser.getCreatedAt(), actualUser.getCreatedAt());
+        assertEquals(expectedUser.getUpdatedAt(), actualUser.getUpdatedAt());
+    }
+
+    @Test
     public void givenAnExistentUser_whenCallsFindByEmail_thenReturnsTheUser() {
         // given
-        final var expectedUser = User.newUser(Email.newEmail("test@mail.com"), Password.newPassword("test12"));
+        final var expectedUser = User.newUser(Email.with("test@mail.com"), Password.withRawValue("test12"));
         assertEquals(0, repository.count());
 
         repository.save(UserJpaEntity.from(expectedUser));

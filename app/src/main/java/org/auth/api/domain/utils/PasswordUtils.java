@@ -11,15 +11,15 @@ public final class PasswordUtils {
 
     private PasswordUtils() { }
 
-    public static String encodePassword(final String password) {
-        return encoder.encode(password);
+    public static String encodePassword(final String rawPassword) {
+        return encoder.encode(rawPassword);
     }
 
     public static boolean isEncodedPassword(final String encodedPassword) {
         return encoderPattern.matcher(encodedPassword).matches();
     }
 
-    public static boolean verifyPassword(final String password, final String encodedPassword) {
-        return encoder.matches(password, encodedPassword);
+    public static boolean verifyPassword(final String rawPassword, final String encodedPassword) {
+        return encoder.matches(rawPassword, encodedPassword);
     }
 }

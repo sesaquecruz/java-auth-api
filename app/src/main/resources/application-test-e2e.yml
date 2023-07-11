@@ -3,3 +3,7 @@ mysql:
   schema: auth_api
   username: root
   password: root123
+
+key:
+  private: classpath:app.key
+  public: classpath:app.pub

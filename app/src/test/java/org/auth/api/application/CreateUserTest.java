@@ -1,9 +1,9 @@
 package org.auth.api.application;
 
-import org.auth.api.application.user.CreateUserInput;
-import org.auth.api.application.user.DefaultCreateUser;
-import org.auth.api.domain.exceptions.InternalErrorException;
-import org.auth.api.domain.exceptions.NotificationException;
+import org.auth.api.application.user.create.CreateUserInput;
+import org.auth.api.application.user.create.DefaultCreateUser;
+import org.auth.api.domain.exceptions.GatewayException;
+import org.auth.api.domain.exceptions.notification.NotificationException;
 import org.auth.api.domain.user.User;
 import org.auth.api.domain.user.UserGateway;
 import org.auth.api.domain.valueobjects.Email;
@@ -63,7 +63,7 @@ public class CreateUserTest {
 
         verify(gateway, times(1)).save(argThat(user ->
             Objects.nonNull(user) &&
-            Objects.equals(actualOutput.id(), user.getId().toString())
+            Objects.equals(actualOutput.id(), user.getId().getValue())
         ));
     }
 
@@ -79,7 +79,7 @@ public class CreateUserTest {
         );
 
         // then
-        final var errors = actualException.getErrors();
+        final var errors = actualException.getNotification().getNotifications();
         final var emailErrors = errors.get("email");
         final var passwordErrors = errors.get("password");
 
@@ -88,10 +88,10 @@ public class CreateUserTest {
         assertTrue(errors.containsKey("password"));
 
         assertEquals(1, emailErrors.size());
-        assertEquals("email must not be null", emailErrors.get(0).message());
+        assertEquals("email must not be null", emailErrors.get(0));
 
         assertEquals(1, passwordErrors.size());
-        assertEquals("password must not be null", passwordErrors.get(0).message());
+        assertEquals("password must not be null", passwordErrors.get(0));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class CreateUserTest {
         );
 
         // then
-        final var errors = actualException.getErrors();
+        final var errors = actualException.getNotification().getNotifications();
         final var emailErrors = errors.get("email");
         final var passwordErrors = errors.get("password");
 
@@ -115,10 +115,10 @@ public class CreateUserTest {
         assertTrue(errors.containsKey("password"));
 
         assertEquals(1, emailErrors.size());
-        assertEquals("email must not be empty", emailErrors.get(0).message());
+        assertEquals("email must not be empty", emailErrors.get(0));
 
         assertEquals(1, passwordErrors.size());
-        assertEquals("password must not be empty", passwordErrors.get(0).message());
+        assertEquals("password must not be empty", passwordErrors.get(0));
     }
 
     @Test
@@ -133,14 +133,14 @@ public class CreateUserTest {
         );
 
         // then
-        final var errors = actualException.getErrors();
+        final var errors = actualException.getNotification().getNotifications();
         final var emailErrors = errors.get("email");
 
         assertEquals(1, errors.size());
         assertTrue(errors.containsKey("email"));
 
         assertEquals(1, emailErrors.size());
-        assertEquals("email is invalid", emailErrors.get(0).message());
+        assertEquals("email is invalid", emailErrors.get(0));
     }
 
     @Test
@@ -155,14 +155,14 @@ public class CreateUserTest {
         );
 
         // then
-        final var errors = actualException.getErrors();
+        final var errors = actualException.getNotification().getNotifications();
         final var emailErrors = errors.get("password");
 
         assertEquals(1, errors.size());
         assertTrue(errors.containsKey("password"));
 
         assertEquals(1, emailErrors.size());
-        assertEquals("password must have more than 5 characters", emailErrors.get(0).message());
+        assertEquals("password must have more than 5 characters", emailErrors.get(0));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class CreateUserTest {
         // given
         final var expectedEmail = "test@mail.com";
         final var expectedPassword = "test12";
-        final var expectedUser = User.newUser(Email.newEmail(expectedEmail), Password.newPassword(expectedEmail));
+        final var expectedUser = User.newUser(Email.with(expectedEmail), Password.withRawValue(expectedEmail));
 
         when(gateway.findByEmail(any()))
                 .thenReturn(Optional.of(expectedUser));
@@ -181,14 +181,14 @@ public class CreateUserTest {
         );
 
         // then
-        final var errors = actualException.getErrors();
+        final var errors = actualException.getNotification().getNotifications();
         final var emailErrors = errors.get("email");
 
         assertEquals(1, errors.size());
         assertTrue(errors.containsKey("email"));
 
         assertEquals(1, emailErrors.size());
-        assertEquals("email already used", emailErrors.get(0).message());
+        assertEquals("email already used", emailErrors.get(0));
 
         verify(gateway, times(1)).findByEmail(argThat(email ->
             Objects.equals(expectedEmail, email.getAddress())
@@ -202,11 +202,11 @@ public class CreateUserTest {
         final var expectedPassword = "test12";
         final var expectedExceptionMessage = "user gateway error";
 
-        doThrow(InternalErrorException.with(expectedExceptionMessage, null))
+        doThrow(GatewayException.with(expectedExceptionMessage, null))
                 .when(gateway).findByEmail(any());
 
         // when
-        final var actualException = assertThrows(InternalErrorException.class, () ->
+        final var actualException = assertThrows(GatewayException.class, () ->
                 useCase.execute(CreateUserInput.with(expectedEmail, expectedPassword))
         );
 
@@ -227,11 +227,11 @@ public class CreateUserTest {
         when(gateway.findByEmail(any()))
                 .thenReturn(Optional.empty());
 
-        doThrow(InternalErrorException.with(expectedExceptionMessage, null))
+        doThrow(GatewayException.with(expectedExceptionMessage, null))
                 .when(gateway).save(any());
 
         // when
-        final var actualException = assertThrows(InternalErrorException.class, () ->
+        final var actualException = assertThrows(GatewayException.class, () ->
                 useCase.execute(CreateUserInput.with(expectedEmail, expectedPassword))
         );
 

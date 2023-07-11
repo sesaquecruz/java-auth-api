@@ -1,22 +1,19 @@
 package org.auth.api.domain.exceptions;
 
-import org.auth.api.domain.validation.ValidationError;
-import org.auth.api.domain.validation.ValidationHandler;
-
-import java.util.List;
+import org.auth.api.domain.validation.ErrorHandler;
 
 public class ValidationException extends DomainException {
-    private final List<ValidationError> errors;
+    private final ErrorHandler errorHandler;
 
-    private ValidationException(final List<ValidationError> errors) {
-        this.errors = errors;
+    private ValidationException(final ErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
     }
 
-    public static ValidationException with(final ValidationHandler handler) {
-        return new ValidationException(handler.getErrors());
+    public static ValidationException with(final ErrorHandler errorHandler) {
+        return new ValidationException(errorHandler);
     }
 
-    public List<ValidationError> getErrors() {
-        return errors;
+    public ErrorHandler getErrorHandler() {
+        return errorHandler;
     }
 }

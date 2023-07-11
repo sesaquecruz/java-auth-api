@@ -3,6 +3,7 @@ package org.auth.api.infrastructure.user;
 import org.auth.api.domain.user.User;
 import org.auth.api.domain.user.UserGateway;
 import org.auth.api.domain.valueobjects.Email;
+import org.auth.api.domain.valueobjects.Identifier;
 import org.auth.api.infrastructure.user.persitence.UserJpaEntity;
 import org.auth.api.infrastructure.user.persitence.UserRepository;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,13 @@ public class UserMySQLGateway implements UserGateway {
         return userRepository
                 .saveAndFlush(UserJpaEntity.from(user))
                 .toAggregate();
+    }
+
+    @Override
+    public Optional<User> findById(final Identifier id) {
+        return userRepository
+                .findById(id.getValue())
+                .map(UserJpaEntity::toAggregate);
     }
 
     @Override
