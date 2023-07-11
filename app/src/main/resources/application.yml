@@ -5,7 +5,7 @@ server:
 
 jwt:
   issuer: auth-api
-  expiry: 36000
+  expiry: 600
   key:
     private: ${key.private}
     public: ${key.public}

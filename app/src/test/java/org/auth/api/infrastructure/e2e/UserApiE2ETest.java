@@ -1,12 +1,13 @@
 package org.auth.api.infrastructure.e2e;
 
 import org.auth.api.domain.user.User;
+import org.auth.api.domain.utils.PasswordUtils;
 import org.auth.api.domain.valueobjects.Email;
 import org.auth.api.domain.valueobjects.Password;
 import org.auth.api.infrastructure.E2ETest;
 import org.auth.api.infrastructure.config.json.Json;
 import org.auth.api.infrastructure.services.security.AuthTokenService;
-import org.auth.api.infrastructure.user.models.CreateUserRequest;
+import org.auth.api.infrastructure.user.models.UserRequest;
 import org.auth.api.infrastructure.user.persitence.UserJpaEntity;
 import org.auth.api.infrastructure.user.persitence.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,8 +25,7 @@ import static java.util.Objects.requireNonNull;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @E2ETest
@@ -73,7 +73,7 @@ public class UserApiE2ETest {
         // given
         final var email = "test@mail.com";
         final var password = "test12";
-        final var requestContent = Json.marshal(new CreateUserRequest(email, password));
+        final var requestContent = Json.marshal(new UserRequest(email, password));
         assertEquals(0, userRepository.count());
 
         // when
@@ -93,7 +93,7 @@ public class UserApiE2ETest {
     @Test
     public void givenNullData_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
-        final var requestContent = Json.marshal(new CreateUserRequest(null, null));
+        final var requestContent = Json.marshal(new UserRequest(null, null));
         assertEquals(0, userRepository.count());
 
         // when
@@ -115,7 +115,7 @@ public class UserApiE2ETest {
     @Test
     public void givenEmptyData_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
-        final var requestContent = Json.marshal(new CreateUserRequest("", ""));
+        final var requestContent = Json.marshal(new UserRequest("", ""));
         assertEquals(0, userRepository.count());
 
         // when
@@ -137,7 +137,7 @@ public class UserApiE2ETest {
     @Test
     public void givenAnInvalidEmail_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
-        final var requestContent = Json.marshal(new CreateUserRequest("test@mailcom", "test12"));
+        final var requestContent = Json.marshal(new UserRequest("test@mailcom", "test12"));
         assertEquals(0, userRepository.count());
 
         // when
@@ -158,7 +158,7 @@ public class UserApiE2ETest {
     @Test
     public void givenAPasswordLessThan5Characters_whenAccessesCreateUser_thenReturnsUnprocessableEntity() throws Exception {
         // given
-        final var requestContent = Json.marshal(new CreateUserRequest("test@mail.com", "test1"));
+        final var requestContent = Json.marshal(new UserRequest("test@mail.com", "test1"));
         assertEquals(0, userRepository.count());
 
         // when
@@ -258,5 +258,113 @@ public class UserApiE2ETest {
         // then
         mvc.perform(request)
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void givenValidCredentialsAndData_whenAccessesUpdateUser_thenUpdatesUserData() throws Exception {
+        // given
+        final var email = "update@mail.com";
+        final var password = "update123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+        final var id = user.getId().getValue();
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        final var authToken = getAuthToken(email, password);
+
+        final var expectedEmail = "newupdate@mail.com";
+        final var expectedPassword = "newupdated123";
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
+
+        // when
+        final var request = put("/users")
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestContent);
+        // then
+        mvc.perform(request)
+                .andExpect(status().isNoContent());
+
+        assertEquals(1, userRepository.count());
+        final var actualUser = userRepository.findById(id).get().toAggregate();
+
+        assertEquals(actualUser.getEmail().getAddress(), expectedEmail);
+        assertTrue(PasswordUtils.verifyPassword(expectedPassword, actualUser.getPassword().getValue()));
+    }
+
+    @Test
+    public void givenValidCredentialsAndInvalidData_whenAccessesUpdateUser_thenReturnsUnprocessableEntity() throws Exception {
+        // given
+        final var email = "update@mail.com";
+        final var password = "update123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+        final var id = user.getId().getValue();
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        final var authToken = getAuthToken(email, password);
+
+        final var expectedEmail = "newupdate@mailcom";
+        final var expectedPassword = "newup";
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
+
+        // when
+        final var request = put("/users")
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestContent);
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(jsonPath("$.email[0]", equalTo("email is invalid")))
+                .andExpect(jsonPath("$.password[0]", equalTo("password must have more than 5 characters")));
+
+        assertEquals(1, userRepository.count());
+        final var actualUser = userRepository.findById(id).get().toAggregate();
+
+        assertNotEquals(actualUser.getEmail().getAddress(), expectedEmail);
+        assertFalse(PasswordUtils.verifyPassword(expectedPassword, actualUser.getPassword().getValue()));
+
+        assertEquals(actualUser.getEmail().getAddress(), email);
+        assertTrue(PasswordUtils.verifyPassword(password, actualUser.getPassword().getValue()));
+    }
+
+    @Test
+    public void givenInvalidCredentialsAndValidData_whenAccessesUpdateUser_thenReturnsUnauthorized() throws Exception {
+        // given
+        final var email = "update@mail.com";
+        final var password = "update123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+        final var id = user.getId().getValue();
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        final var authToken = "";
+
+        final var expectedEmail = "newupdate@mail.com";
+        final var expectedPassword = "newupdated123";
+        final var requestContent = Json.marshal(new UserRequest(expectedEmail, expectedPassword));
+
+        // when
+        final var request = put("/users")
+                .header("Authorization", authToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestContent);
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnauthorized());
+
+        assertEquals(1, userRepository.count());
+        final var actualUser = userRepository.findById(id).get().toAggregate();
+
+        assertNotEquals(actualUser.getEmail().getAddress(), expectedEmail);
+        assertFalse(PasswordUtils.verifyPassword(expectedPassword, actualUser.getPassword().getValue()));
+
+        assertEquals(actualUser.getEmail().getAddress(), email);
+        assertTrue(PasswordUtils.verifyPassword(password, actualUser.getPassword().getValue()));
     }
 }
