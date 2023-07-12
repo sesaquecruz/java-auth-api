@@ -2,6 +2,8 @@ package org.auth.api.infrastructure.config;
 
 import org.auth.api.application.user.create.CreateUser;
 import org.auth.api.application.user.create.DefaultCreateUser;
+import org.auth.api.application.user.delete.DefaultDeleteUser;
+import org.auth.api.application.user.delete.DeleteUser;
 import org.auth.api.application.user.find.DefaultFindUser;
 import org.auth.api.application.user.find.FindUser;
 import org.auth.api.application.user.update.DefaultUpdateUser;
@@ -31,5 +33,10 @@ public class UseCasesConfig {
     @Bean
     public UpdateUser updateUser() {
         return new DefaultUpdateUser(userGateway);
+    }
+
+    @Bean
+    public DeleteUser deleteUser() {
+        return new DefaultDeleteUser(userGateway);
     }
 }

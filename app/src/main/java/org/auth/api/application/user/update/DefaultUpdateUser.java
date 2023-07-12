@@ -2,6 +2,7 @@ package org.auth.api.application.user.update;
 
 import org.auth.api.domain.exceptions.GatewayException;
 import org.auth.api.domain.exceptions.ValidationException;
+import org.auth.api.domain.exceptions.notification.IdentifierException;
 import org.auth.api.domain.exceptions.notification.NotFoundException;
 import org.auth.api.domain.exceptions.notification.NotificationException;
 import org.auth.api.domain.user.User;
@@ -26,7 +27,7 @@ public class DefaultUpdateUser extends UpdateUser {
 
         final var id = createId(input.id(), notification);
         if (id.isEmpty())
-            throw NotificationException.with(notification);
+            throw IdentifierException.with(notification);
 
         final var user = findUser(id.get());
         if (user.isEmpty())
