@@ -51,7 +51,7 @@ public class UserApiE2ETest {
     }
 
     @BeforeEach
-    public void verifyContainerAndRepository() {
+    public void verifyContainerAndClearRepository() {
         assertTrue(MYSQL_CONTAINER.isRunning());
         userRepository.deleteAll();
     }
@@ -366,5 +366,51 @@ public class UserApiE2ETest {
 
         assertEquals(actualUser.getEmail().getAddress(), email);
         assertTrue(PasswordUtils.verifyPassword(password, actualUser.getPassword().getValue()));
+    }
+
+    @Test
+    public void givenValidUserCredentials_whenAccessesDeleteUser_thenDeletesTheUser() throws Exception {
+        // given
+        final var email = "test@mail.com";
+        final var password = "test123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        final var authToken = getAuthToken(email, password);
+
+        // when
+        final var request = delete("/users")
+                .header("Authorization", authToken);
+        // then
+        mvc.perform(request)
+                .andExpect(status().isNoContent());
+
+        assertEquals(0, userRepository.count());
+    }
+
+    @Test
+    public void givenInvalidUserCredentials_whenAccessesDeleteUser_thenReturnsUnauthorized() throws Exception {
+        // given
+        final var email = "test@mail.com";
+        final var password = "test123";
+        final var user = User.newUser(Email.with(email), Password.withRawValue(password));
+        final var id = user.getId().getValue();
+
+        userRepository.save(UserJpaEntity.from(user));
+        assertEquals(1, userRepository.count());
+
+        final var authToken = "";
+
+        // when
+        final var request = delete("/users")
+                .header("Authorization", authToken);
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnauthorized());
+
+        assertEquals(1, userRepository.count());
+        assertTrue(userRepository.findById(id).isPresent());
     }
 }

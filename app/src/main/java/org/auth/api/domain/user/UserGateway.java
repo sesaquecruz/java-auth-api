@@ -9,4 +9,5 @@ public interface UserGateway {
     User save(User user);
     Optional<User> findById(Identifier id);
     Optional<User> findByEmail(Email email);
+    void deleteById(Identifier id);
 }

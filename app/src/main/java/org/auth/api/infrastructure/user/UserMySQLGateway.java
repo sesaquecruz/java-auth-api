@@ -38,4 +38,9 @@ public class UserMySQLGateway implements UserGateway {
                 .findByEmail(email.getAddress())
                 .map(UserJpaEntity::toAggregate);
     }
+
+    @Override
+    public void deleteById(final Identifier id) {
+        userRepository.deleteById(id.getValue());
+    }
 }

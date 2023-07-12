@@ -2,6 +2,8 @@ package org.auth.api.infrastructure.api.controllers;
 
 import org.auth.api.application.user.create.CreateUser;
 import org.auth.api.application.user.create.CreateUserInput;
+import org.auth.api.application.user.delete.DeleteUser;
+import org.auth.api.application.user.delete.DeleteUserInput;
 import org.auth.api.application.user.find.FindUser;
 import org.auth.api.application.user.find.FindUserInput;
 import org.auth.api.application.user.update.UpdateUser;
@@ -22,17 +24,20 @@ public class UserController implements UserApi {
     private final CreateUser createUserUC;
     private final FindUser findUserUC;
     private final UpdateUser updateUserUC;
+    private final DeleteUser deleteUserUC;
 
     public UserController(
             final AuthTokenService authTokenService,
             final CreateUser createUserUC,
             final FindUser findUserUC,
-            final UpdateUser updateUserUC
+            final UpdateUser updateUserUC,
+            final DeleteUser deleteUserUC
     ) {
         this.authTokenService = authTokenService;
         this.createUserUC = createUserUC;
         this.findUserUC = findUserUC;
         this.updateUserUC = updateUserUC;
+        this.deleteUserUC = deleteUserUC;
     }
 
     @Override
@@ -63,6 +68,14 @@ public class UserController implements UserApi {
         final var sub = authTokenService.getSub(token);
         final var input = UpdateUserInput.with(sub, body.email(), body.password());
         updateUserUC.execute(input);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteUser(final String token) {
+        final var sub = authTokenService.getSub(token);
+        final var input = DeleteUserInput.with(sub);
+        deleteUserUC.execute(input);
         return ResponseEntity.noContent().build();
     }
 }

@@ -52,6 +52,7 @@ public interface UserApi {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User Found"),
+            @ApiResponse(responseCode = "400", description = "Invalid User"),
             @ApiResponse(responseCode = "401", description = "Invalid Credentials"),
             @ApiResponse(responseCode = "500", description = "Server Error")
     })
@@ -66,6 +67,8 @@ public interface UserApi {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "User Updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid User"),
+            @ApiResponse(responseCode = "401", description = "Invalid Credentials"),
             @ApiResponse(responseCode = "422", description = "Invalid Data"),
             @ApiResponse(responseCode = "500", description = "Server Error")
     })
@@ -73,4 +76,17 @@ public interface UserApi {
             @RequestHeader(name="Authorization") @Schema(hidden = true) String token,
             @RequestBody UserRequest body
     );
+
+    @DeleteMapping
+    @Operation(
+            summary = "Delete an user",
+            security = @SecurityRequirement(name = "Bearer")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "User Deleted"),
+            @ApiResponse(responseCode = "400", description = "Invalid User"),
+            @ApiResponse(responseCode = "401", description = "Invalid Credentials"),
+            @ApiResponse(responseCode = "500", description = "Server Error")
+    })
+    ResponseEntity<Void> deleteUser(@RequestHeader(name="Authorization") @Schema(hidden = true) String token);
 }

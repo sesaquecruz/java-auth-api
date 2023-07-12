@@ -2,6 +2,7 @@ package org.auth.api.infrastructure.api;
 
 import org.auth.api.application.user.create.CreateUser;
 import org.auth.api.application.user.create.CreateUserOutput;
+import org.auth.api.application.user.delete.DeleteUser;
 import org.auth.api.application.user.find.FindUser;
 import org.auth.api.application.user.find.FindUserOutput;
 import org.auth.api.application.user.update.UpdateUser;
@@ -45,6 +46,8 @@ public class UserApiIT {
     private FindUser findUserUC;
     @MockBean
     private UpdateUser updateUserUC;
+    @MockBean
+    private DeleteUser deleteUserUC;
     @Autowired
     private MockMvc mvc;
 
@@ -328,6 +331,41 @@ public class UserApiIT {
                 .header("Authorization", authToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestContent);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void givenValidUserCredentials_whenAccessesDeleteUser_thenDeletesTheUser() throws Exception {
+        // given
+        final var authToken = getAuthToken();
+
+        doNothing()
+                .when(deleteUserUC).execute(any());
+
+        // when
+        final var request = delete("/users")
+                .header("Authorization", authToken);
+
+        // then
+        mvc.perform(request)
+                .andExpect(status().isNoContent());
+
+        verify(deleteUserUC, times(1)).execute(argThat(input ->
+                Objects.equals(USER_ID, input.id()))
+        );
+    }
+
+    @Test
+    public void givenInvalidUserCredentials_whenAccessesDeleteUser_thenReturnsUnauthorized() throws Exception {
+        // given
+        final var authToken = "";
+
+        // when
+        final var request = delete("/users")
+                .header("Authorization", authToken);
 
         // then
         mvc.perform(request)
