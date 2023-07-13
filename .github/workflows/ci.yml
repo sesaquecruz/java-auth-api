@@ -43,5 +43,5 @@ jobs:
       - name: Show Version
         run: |
           VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/')
-          echo "Version ---> $VERSION"
+          echo "Version ---> v$VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV

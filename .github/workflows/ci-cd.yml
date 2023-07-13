@@ -25,6 +25,7 @@ jobs:
         run: ./gradlew test
   deploy:
     name: Deploy Runner
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -57,7 +58,7 @@ jobs:
           echo "Version ---> $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Set Build Tag
-        run: echo BUILD_TAG=$(echo ${{ github.head_ref || github.ref_name }} | sed "s,/,_,g")-${{ github.run_number }}-${{ env.VERSION }} >> $GITHUB_ENV
+        run: echo BUILD_TAG=$(echo ${{ github.head_ref || github.ref_name }} | sed "s,/,_,g")-run${{ github.run_number }}-v${{ env.VERSION }} >> $GITHUB_ENV
       - name: Show Build Tag
         run: echo "Tag ---> ${{ env.BUILD_TAG }}"
       - name: Login to DockerHub
