@@ -1,16 +1,33 @@
 version: '3.9'
 
+networks:
+  auth-api-net:
+
 services:
   mysql:
-    container_name: auth-api-db
+    container_name: mysql
     image: mysql:8.0.32
+    profiles:
+      - db
     environment:
       - MYSQL_ROOT_PASSWORD=root123
       - MYSQL_DATABASE=auth_api
     ports:
       - "3306:3306"
     networks:
-      - auth-api
+      - auth-api-net
 
-networks:
   auth-api:
+    container_name: auth-api
+    build: .
+    profiles:
+      - app
+    restart: unless-stopped
+    environment:
+      - MYSQL_URL=mysql:3306
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    networks:
+      - auth-api-net
