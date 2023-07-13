@@ -42,5 +42,6 @@ jobs:
           useConfigFile: true
       - name: Show Version
         run: |
-          echo VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/') >> $GITHUB_ENV
+          VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/')
           echo "Version ---> $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV

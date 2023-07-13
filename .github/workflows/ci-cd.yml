@@ -53,10 +53,11 @@ jobs:
           useConfigFile: true
       - name: Show Version
         run: |
-          echo VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/') >> $GITHUB_ENV
+          VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/')
           echo "Version ---> $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Set Build Tag
-        run: echo BUILD_TAG=${{ env.VERSION }}-$(echo ${{ github.head_ref || github.ref_name }} | sed "s,/,_,g")-${{ github.run_number }} >> $GITHUB_ENV
+        run: echo BUILD_TAG=$(echo ${{ github.head_ref || github.ref_name }} | sed "s,/,_,g")-${{ github.run_number }}-${{ env.VERSION }} >> $GITHUB_ENV
       - name: Show Build Tag
         run: echo "Tag ---> ${{ env.BUILD_TAG }}"
       - name: Login to DockerHub
