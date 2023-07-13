@@ -25,7 +25,7 @@ jobs:
         run: ./gradlew test
   build-deploy:
     name: Build and Deploy Runner
-    needs: tests
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
