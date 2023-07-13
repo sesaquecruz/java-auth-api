@@ -53,6 +53,9 @@ jacocoTestReport {
 }
 
 test {
+    testLogging {
+        events 'passed', 'failed'
+    }
     finalizedBy jacocoTestReport
 }
 
