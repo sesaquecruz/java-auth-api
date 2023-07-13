@@ -59,4 +59,4 @@ jobs:
           context: .
           push: true
           build-args: VERSION=${{ env.BUILD_TAG }}
-          tags: ${{ env.DOCKERHUB_IMAGE }}:${{ env.BUILD_TAG }}
+          tags: $DOCKERHUB_IMAGE:${{ env.BUILD_TAG }}
