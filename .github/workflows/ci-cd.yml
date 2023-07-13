@@ -54,7 +54,7 @@ jobs:
       - name: Show Version
         run: |
           echo VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/') >> $GITHUB_ENV
-          echo "Version ---> ${{ env.VERSION }}"
+          echo "Version ---> $VERSION"
       - name: Set Build Tag
         run: echo BUILD_TAG=${{ env.VERSION }}-$(echo ${{ github.head_ref || github.ref_name }} | sed "s,/,_,g")-${{ github.run_number }} >> $GITHUB_ENV
       - name: Show Build Tag
