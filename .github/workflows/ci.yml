@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - 'feature/**'
-      - 'bugfix/**'
       - 'develop'
+      - 'bugfix/**'
   workflow_dispatch:
 
 jobs:
