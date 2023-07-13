@@ -6,26 +6,19 @@ on:
       - 'feature/**'
       - 'bugfix/**'
       - 'develop'
-      - 'release/**'
-      - 'main'
-      - 'hotfix/**'
   workflow_dispatch:
 
 jobs:
-  tests:
-    name: Tests Runner
+  test:
+    name: Test Runner
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
       - name: Set Up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
-          distribution: 'adopt'
-
+          java-version: 17
+          distribution: adopt
       - name: Run Tests
         run: ./gradlew test
