@@ -5,7 +5,7 @@ on:
     branches:
       - 'feature/**'
       - 'bugfix/**'
-#      - 'develop'
+      - 'develop'
   workflow_dispatch:
 
 jobs:
@@ -15,6 +15,19 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0
+        with:
+          versionSpec: 5.x
+          preferLatestVersion: true
+      - name: Set Version
+        uses: gittools/actions/gitversion/execute@v0
+        with:
+          useConfigFile: true
+      - name: Show Version
+        run: echo "Version ---> $GITVERSION_SEMVER"
       - name: Set Up JDK
         uses: actions/setup-java@v3
         with:
