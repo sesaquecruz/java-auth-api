@@ -25,9 +25,9 @@ import org.springframework.core.env.AbstractEnvironment;
         type = SecuritySchemeType.HTTP,
         in = SecuritySchemeIn.HEADER
 )
-public class App {
+public class AuthApiApplication {
     public static void main(String[] args) {
         System.setProperty(AbstractEnvironment.DEFAULT_PROFILES_PROPERTY_NAME, "development");
-        SpringApplication.run(App.class, args);
+        SpringApplication.run(AuthApiApplication.class, args);
     }
 }

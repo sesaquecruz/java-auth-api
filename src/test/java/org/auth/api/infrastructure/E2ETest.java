@@ -1,6 +1,6 @@
 package org.auth.api.infrastructure;
 
-import org.auth.api.App;
+import org.auth.api.AuthApiApplication;
 import org.junit.jupiter.api.Tag;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 @Inherited
 @ActiveProfiles("test-e2e")
 @Tag("e2eTest")
-@SpringBootTest(classes = App.class)
+@SpringBootTest(classes = AuthApiApplication.class)
 @AutoConfigureMockMvc
 public @interface E2ETest {
 }

@@ -54,7 +54,8 @@ jacocoTestReport {
 
 test {
     testLogging {
-        events 'passed', 'failed'
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = false
     }
     finalizedBy jacocoTestReport
 }
