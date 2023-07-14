@@ -52,7 +52,7 @@ docker compose --profile db up -d
 ./gradlew flywayMigrate
 ```
 
-5. Build API jar:
+5. Build the API jar:
 
 ```
 ./gradlew bootJar
@@ -63,6 +63,13 @@ docker compose --profile db up -d
 ```
 docker compose --profile app up -d --build
 ```
+
+7. To stop all containers, use:
+
+```
+docker compose --profile db --profile app down
+```
+
 The MySQL container can take some seconds to start up.
 
 ## Usage
