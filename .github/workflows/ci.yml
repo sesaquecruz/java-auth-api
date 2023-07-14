@@ -1,0 +1,47 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'develop'
+      - 'bugfix/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set Up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: adopt
+      - name: Run Tests
+        run: ./gradlew test
+  version:
+    name: Version Runner
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0
+        with:
+          versionSpec: 5.x
+          preferLatestVersion: true
+      - name: Set Version
+        uses: gittools/actions/gitversion/execute@v0
+        with:
+          useConfigFile: true
+      - name: Show Version
+        run: |
+          VERSION=$(echo $GITVERSION_SEMVER | sed 's/-[a-zA-Z]*\./-/')
+          echo "Version ---> v$VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
