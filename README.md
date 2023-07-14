@@ -28,6 +28,8 @@ To run this program, you will need:
 
 ## Installation
 
+The docker images of this project can be found on [Docker Hub](https://hub.docker.com/repository/docker/sesaquecruz/java-auth-api).
+
 1. Clone this repository:
 
 ```
