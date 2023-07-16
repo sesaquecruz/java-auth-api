@@ -1,6 +1,6 @@
 # An Auth API with Spring Security and JWT
 
-This project is a REST API for user authentication and authorization that provides a set of endpoints to manage user registration, login, and user-related operations. It was built following SOLID principles and Clean Architecture, and using Java, Spring Web and Spring Security.
+This project is a REST API for user authentication and authorization that provides a set of endpoints to manage user registration, login, and user-related operations. It was built using Java, Spring Web and Spring Security, and following SOLID principles and Clean Architecture.
 
 ## Endpoints
 
@@ -28,7 +28,7 @@ To run this program, you will need:
 
 ## Installation
 
-The docker images of this project can be found on [Docker Hub](https://hub.docker.com/repository/docker/sesaquecruz/java-auth-api).
+The docker images of this project can be found on [Docker Hub](https://hub.docker.com/r/sesaquecruz/java-auth-api).
 
 1. Clone this repository:
 
